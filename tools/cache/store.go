@@ -20,8 +20,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/klog/v2"
 )
+
+var log = logrus.New()
 
 // Store is a generic object storage and processing interface.  A
 // Store holds a map from string keys to accumulators, and has
@@ -148,6 +152,7 @@ var _ Store = &cache{}
 
 // Add inserts an item into the cache.
 func (c *cache) Add(obj interface{}) error {
+	log.Warn("SLEEVELESS - store.go Add")
 	key, err := c.keyFunc(obj)
 	if err != nil {
 		return KeyError{obj, err}
@@ -158,6 +163,7 @@ func (c *cache) Add(obj interface{}) error {
 
 // Update sets an item in the cache to its updated state.
 func (c *cache) Update(obj interface{}) error {
+	log.Warn("SLEEVELESS - store.go Update")
 	key, err := c.keyFunc(obj)
 	if err != nil {
 		return KeyError{obj, err}
@@ -168,6 +174,7 @@ func (c *cache) Update(obj interface{}) error {
 
 // Delete removes an item from the cache.
 func (c *cache) Delete(obj interface{}) error {
+	klog.V(1).Info("SLEEVELESS - store.go Delete")
 	key, err := c.keyFunc(obj)
 	if err != nil {
 		return KeyError{obj, err}
@@ -234,6 +241,7 @@ func (c *cache) Get(obj interface{}) (item interface{}, exists bool, err error) 
 // GetByKey returns the request item, or exists=false.
 // GetByKey is completely threadsafe as long as you treat all items as immutable.
 func (c *cache) GetByKey(key string) (item interface{}, exists bool, err error) {
+	log.Warn("SLEEVELESS - store.go GetByKey")
 	item, exists = c.cacheStorage.Get(key)
 	return item, exists, nil
 }
@@ -242,6 +250,7 @@ func (c *cache) GetByKey(key string) (item interface{}, exists bool, err error) 
 // 'c' takes ownership of the list, you should not reference the list again
 // after calling this function.
 func (c *cache) Replace(list []interface{}, resourceVersion string) error {
+	klog.V(1).Info("SLEEVELESS - store.go Replace")
 	items := make(map[string]interface{}, len(list))
 	for _, item := range list {
 		key, err := c.keyFunc(item)
@@ -269,6 +278,7 @@ func NewStore(keyFunc KeyFunc) Store {
 
 // NewIndexer returns an Indexer implemented simply with a map and a lock.
 func NewIndexer(keyFunc KeyFunc, indexers Indexers) Indexer {
+	log.Warn("SLEEVELESS - NewIndexer")
 	return &cache{
 		cacheStorage: NewThreadSafeStore(indexers, Indices{}),
 		keyFunc:      keyFunc,
