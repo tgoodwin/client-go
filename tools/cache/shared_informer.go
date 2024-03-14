@@ -232,6 +232,8 @@ type SharedIndexInformer interface {
 	// AddIndexers add indexers to the informer before it starts.
 	AddIndexers(indexers Indexers) error
 	GetIndexer() Indexer
+
+	SetGroupVersionKind(gvk string)
 }
 
 // NewSharedInformer creates a new instance for the ListerWatcher. See NewSharedIndexInformerWithOptions for full details.
@@ -265,6 +267,9 @@ func NewSharedIndexInformer(lw ListerWatcher, exampleObject runtime.Object, defa
 // `minimumResyncPeriod` defined in this file.
 func NewSharedIndexInformerWithOptions(lw ListerWatcher, exampleObject runtime.Object, options SharedIndexInformerOptions) SharedIndexInformer {
 	realClock := &clock.RealClock{}
+
+	name := exampleObject.GetObjectKind().GroupVersionKind().String()
+	log.WithField("name", "SLEEVELESS").Infof("Creating shared informer for %s", name)
 
 	return &sharedIndexInformer{
 		indexer:                         NewIndexer(DeletionHandlingMetaNamespaceKeyFunc, options.Indexers),
@@ -392,6 +397,9 @@ type sharedIndexInformer struct {
 	watchErrorHandler WatchErrorHandler
 
 	transform TransformFunc
+
+	// SLEEVELESS
+	groupVersionKind string
 }
 
 // dummyController hides the fact that a SharedInformer is different from a dedicated one
@@ -426,6 +434,10 @@ type addNotification struct {
 
 type deleteNotification struct {
 	oldObj interface{}
+}
+
+func (s *sharedIndexInformer) SetGroupVersionKind(gvk string) {
+	s.groupVersionKind = gvk
 }
 
 func (s *sharedIndexInformer) SetWatchErrorHandler(handler WatchErrorHandler) error {
